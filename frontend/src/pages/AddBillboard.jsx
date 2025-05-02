@@ -12,7 +12,10 @@ import {
   FaUpload,
   FaInfoCircle,
   FaTimes,
-  FaEye
+  FaEye,
+  FaUser,
+  FaPhone,
+  FaEnvelope
 } from "react-icons/fa";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
@@ -40,21 +43,22 @@ const AddBillboard = () => {
     minBookingDays: "7",
     description: "",
     features: [""],
-    nearbyAttractions: [""]
+    nearbyAttractions: [""],
+    ownerName: "",
+    ownerPhone: "",
+    ownerEmail: ""
   });
   const [images, setImages] = useState([]);
   const [previewImages, setPreviewImages] = useState([]);
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 3;
 
-  // Check if user is logged in
   useEffect(() => {
     if (!user) {
       setShowLoginModal(true);
     }
   }, [user]);
 
-  // Handle form field changes
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -63,7 +67,6 @@ const AddBillboard = () => {
     }));
   };
 
-  // Handle array fields (features, attractions)
   const handleArrayFieldChange = (index, field, value) => {
     setFormData(prev => {
       const newArray = [...prev[field]];
@@ -75,7 +78,6 @@ const AddBillboard = () => {
     });
   };
 
-  // Add a new empty field to arrays
   const addArrayField = (field) => {
     setFormData(prev => ({
       ...prev,
@@ -83,7 +85,6 @@ const AddBillboard = () => {
     }));
   };
 
-  // Remove item from arrays
   const removeArrayField = (index, field) => {
     setFormData(prev => {
       const newArray = [...prev[field]];
@@ -95,7 +96,6 @@ const AddBillboard = () => {
     });
   };
 
-  // Handle image uploads
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files);
     
@@ -106,12 +106,10 @@ const AddBillboard = () => {
     
     setImages(prev => [...prev, ...files]);
     
-    // Create preview URLs
     const newPreviewImages = files.map(file => URL.createObjectURL(file));
     setPreviewImages(prev => [...prev, ...newPreviewImages]);
   };
 
-  // Remove uploaded image
   const removeImage = (index) => {
     setImages(prev => {
       const newImages = [...prev];
@@ -127,7 +125,14 @@ const AddBillboard = () => {
     });
   };
 
-  // Validate form fields
+  const validatePhone = (phone) => {
+    return /^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/.test(phone);
+  };
+
+  const validateEmail = (email) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
+
   const validateStep = (step) => {
     setError("");
     
@@ -135,6 +140,11 @@ const AddBillboard = () => {
       if (!formData.location) return "Location is required";
       if (!formData.address) return "Address is required";
       if (!formData.latitude || !formData.longitude) return "Coordinates are required";
+      if (!formData.ownerName) return "Owner name is required";
+      if (!formData.ownerPhone) return "Owner phone number is required";
+      if (!validatePhone(formData.ownerPhone)) return "Please enter a valid phone number";
+      if (!formData.ownerEmail) return "Owner email is required";
+      if (!validateEmail(formData.ownerEmail)) return "Please enter a valid email address";
     }
     
     if (step === 2) {
@@ -151,7 +161,6 @@ const AddBillboard = () => {
     return "";
   };
 
-  // Move to next step
   const nextStep = () => {
     const error = validateStep(currentStep);
     if (error) {
@@ -162,12 +171,10 @@ const AddBillboard = () => {
     setCurrentStep(prev => Math.min(prev + 1, totalSteps));
   };
 
-  // Move to previous step
   const prevStep = () => {
     setCurrentStep(prev => Math.max(prev - 1, 1));
   };
 
-  // Submit the form
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -178,65 +185,47 @@ const AddBillboard = () => {
     }
     
     setIsSubmitting(true);
-    console.log("Submitting form data:", formData);
-    console.log("Images to upload:", images);
     
     try {
-      // Create FormData object
       const formDataObj = new FormData();
       formDataObj.append('location', formData.location);
+      formDataObj.append('address', formData.address);
       formDataObj.append('latitude', parseFloat(formData.latitude));
       formDataObj.append('longitude', parseFloat(formData.longitude));
       formDataObj.append('price', parseFloat(formData.price));
+      formDataObj.append('priceUnit', formData.priceUnit);
       formDataObj.append('height', parseFloat(formData.height));
       formDataObj.append('width', parseFloat(formData.width));
-      formDataObj.append('available', true);
+      formDataObj.append('views', formData.views);
+      formDataObj.append('type', formData.type);
+      formDataObj.append('facingDirection', formData.facingDirection);
+      formDataObj.append('minBookingDays', formData.minBookingDays);
       formDataObj.append('description', formData.description);
-      
-      // Add features and nearby attractions as JSON strings
       formDataObj.append('features', JSON.stringify(formData.features.filter(f => f.trim() !== '')));
+      formDataObj.append('nearbyAttractions', JSON.stringify(formData.nearbyAttractions.filter(a => a.trim() !== '')));
+      formDataObj.append('ownerName', formData.ownerName);
+      formDataObj.append('ownerPhone', formData.ownerPhone);
+      formDataObj.append('ownerEmail', formData.ownerEmail);
       
-      // Check if nearbyAttractions property exists
-      if (formData.nearbyAttractions && Array.isArray(formData.nearbyAttractions)) {
-        formDataObj.append('nearbyAttractions', JSON.stringify(formData.nearbyAttractions.filter(a => a.trim() !== '')));
-      } else {
-        console.warn("nearbyAttractions is not properly defined:", formData.nearbyAttractions);
-        formDataObj.append('nearbyAttractions', JSON.stringify([]));
-      }
-      
-      // Log the FormData entries (for debugging)
-      console.log("Form data to be sent:");
-      for (let [key, value] of formDataObj.entries()) {
-        console.log(`${key}: ${value}`);
-      }
-      
-      // Add images
-      images.forEach((image, index) => {
-        console.log(`Adding image ${index}:`, image.name);
+      images.forEach((image) => {
         formDataObj.append('images', image);
       });
       
-      // Make API call
-      console.log("Sending API request to: http://localhost:5000/api/billboards/addBillboard");
       const response = await fetch('http://localhost:5000/api/billboards/addBillboard', {
         method: 'POST',
         body: formDataObj,
         credentials: 'include',
       });
       
-      console.log("API Response Status:", response.status);
       const data = await response.json();
-      console.log("API Response Data:", data);
       
       if (response.ok) {
         setShowSuccess(true);
-        
-        // Reset form after success
         setTimeout(() => {
           navigate('/find-billboards');
         }, 3000);
       } else {
-        setError('Failed to add billboard: ' + data.message);
+        setError('Failed to add billboard: ' + (data.message || 'Unknown error'));
       }
     } catch (error) {
       console.error('Error submitting billboard:', error);
@@ -252,7 +241,6 @@ const AddBillboard = () => {
       
       <div className="pt-24 pb-12">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Page Header */}
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-900">List Your Billboard</h1>
             <p className="mt-2 text-lg text-gray-600">
@@ -260,7 +248,6 @@ const AddBillboard = () => {
             </p>
           </div>
           
-          {/* Progress Bar */}
           <div className="mb-8">
             <div className="flex items-center justify-between mb-2">
               {Array.from({ length: totalSteps }).map((_, idx) => (
@@ -309,13 +296,12 @@ const AddBillboard = () => {
             </div>
             
             <div className="flex justify-between mt-2 text-sm text-gray-600">
-              <div>Location Details</div>
+              <div>Location & Owner</div>
               <div>Billboard Specifications</div>
               <div>Description & Images</div>
             </div>
           </div>
           
-          {/* Success Message */}
           {showSuccess && (
             <motion.div
               initial={{ opacity: 0, y: -20 }}
@@ -334,7 +320,6 @@ const AddBillboard = () => {
             </motion.div>
           )}
           
-          {/* Error Message */}
           {error && (
             <motion.div
               initial={{ opacity: 0, y: -20 }}
@@ -353,10 +338,8 @@ const AddBillboard = () => {
             </motion.div>
           )}
           
-          {/* Form Container */}
           <div className="bg-white rounded-lg shadow-md p-6 mb-8">
             <form onSubmit={handleSubmit}>
-              {/* Step 1: Location Details */}
               {currentStep === 1 && (
                 <motion.div
                   initial={{ opacity: 0 }}
@@ -364,7 +347,7 @@ const AddBillboard = () => {
                   exit={{ opacity: 0 }}
                 >
                   <h2 className="text-xl font-semibold text-gray-800 mb-6">
-                    Step 1: Location Details
+                    Step 1: Location & Owner Details
                   </h2>
                   
                   <div className="space-y-6">
@@ -435,11 +418,76 @@ const AddBillboard = () => {
                         Tip: You can find coordinates by right-clicking on Google Maps and selecting "What's here?"
                       </p>
                     </div>
+
+                    {/* Owner Information Section */}
+                    <div className="mt-6 border-t border-gray-200 pt-6">
+                      <h3 className="text-lg font-medium text-gray-900 mb-4">Owner Information</h3>
+                      
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Owner Name*
+                          </label>
+                          <div className="relative">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                              <FaUser className="text-gray-500" />
+                            </div>
+                            <input
+                              type="text"
+                              name="ownerName"
+                              value={formData.ownerName}
+                              onChange={handleChange}
+                              placeholder="e.g. John Doe"
+                              className="w-full pl-10 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Phone Number*
+                            </label>
+                            <div className="relative">
+                              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <FaPhone className="text-gray-500" />
+                              </div>
+                              <input
+                                type="tel"
+                                name="ownerPhone"
+                                value={formData.ownerPhone}
+                                onChange={handleChange}
+                                placeholder="e.g. (022) 1234-5678"
+                                className="w-full pl-10 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              />
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Email Address*
+                            </label>
+                            <div className="relative">
+                              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <FaEnvelope className="text-gray-500" />
+                              </div>
+                              <input
+                                type="email"
+                                name="ownerEmail"
+                                value={formData.ownerEmail}
+                                onChange={handleChange}
+                                placeholder="e.g. owner@example.com"
+                                className="w-full pl-10 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </motion.div>
               )}
 
-              {/* Step 2: Billboard Specifications */}
               {currentStep === 2 && (
                 <motion.div
                   initial={{ opacity: 0 }}
@@ -606,7 +654,6 @@ const AddBillboard = () => {
                 </motion.div>
               )}
               
-              {/* Step 3: Description & Images */}
               {currentStep === 3 && (
                 <motion.div
                   initial={{ opacity: 0 }}
@@ -726,7 +773,6 @@ const AddBillboard = () => {
                         </label>
                       </div>
                       
-                      {/* Preview Images */}
                       {previewImages.length > 0 && (
                         <div className="mt-4 grid grid-cols-2 md:grid-cols-3 gap-4">
                           {previewImages.map((preview, index) => (
@@ -752,7 +798,6 @@ const AddBillboard = () => {
                 </motion.div>
               )}
               
-              {/* Form Navigation Buttons */}
               <div className="mt-8 flex justify-between">
                 <button
                   type="button"
@@ -802,7 +847,6 @@ const AddBillboard = () => {
         </div>
       </div>
       
-      {/* Login Required Modal */}
       {showLoginModal && (
         <LoginRequiredModal 
           onClose={() => {
@@ -822,4 +866,4 @@ const AddBillboard = () => {
   );
 };
 
-export default AddBillboard; 
+export default AddBillboard;

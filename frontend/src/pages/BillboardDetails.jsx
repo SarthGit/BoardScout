@@ -355,8 +355,6 @@ const BillboardDetails = () => {
       favorites.push(id);
       localStorage.setItem('favorites', JSON.stringify(favorites));
     }
-    
-    // Here you could also send a request to your backend to save/remove from favorites
   };
 
   const handleContactOwner = () => {
@@ -364,8 +362,28 @@ const BillboardDetails = () => {
       setShowLoginModal(true);
       return;
     }
-    // Here you would implement contact functionality
-    alert(`Contact ${billboard.owner.name} at ${billboard.owner.email} or ${billboard.owner.phone}`);
+    
+    // Navigate to quotation page with billboard details
+    navigate(`/billboards/${id}/quotation`, {
+      state: {
+        billboard: {
+          id: billboard.id,
+          location: billboard.location,
+          address: billboard.address,
+          price: billboard.price,
+          priceUnit: billboard.priceUnit,
+          size: billboard.size,
+          type: billboard.type,
+          images: billboard.images,
+          owner: billboard.owner
+        },
+        user: {
+          name: user.name,
+          email: user.email,
+          company: user.company || ''
+        }
+      }
+    });
   };
   
   const handleViewOnMap = () => {
@@ -542,7 +560,7 @@ const BillboardDetails = () => {
                   onClick={handleContactOwner}
                   className="mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-md font-medium transition-colors"
                 >
-                  Contact Owner
+                  Connect with Owner
                 </button>
                 
                 <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
@@ -634,4 +652,4 @@ const BillboardDetails = () => {
   );
 };
 
-export default BillboardDetails; 
+export default BillboardDetails;

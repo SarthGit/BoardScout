@@ -11,7 +11,7 @@ import Analytics from "./pages/Analytics";
 import Contact from "./pages/Contact";
 import About from "./pages/About";
 import CreateBillboard from "./pages/CreateBillboard";
-
+import QuotationPage from "./pages/QuotationPage";
 function App() {
   return (
     <UserProvider>
@@ -28,6 +28,7 @@ function App() {
         <Route path="/contact" element={<Contact />} />
         <Route path="/about" element={<About />} />
         <Route path="/create-billboard" element={<CreateBillboard />} />
+        <Route path="/billboards/:id/quotation" element={<QuotationPage />} />
       </Routes>
     </Router>
     </UserProvider>
