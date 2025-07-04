@@ -4,6 +4,10 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 const path = require("path");
 const cookieParser = require("cookie-parser");
+// Add this with your other route imports
+const quotationRoutes = require('./routes/quotationRoutes');
+
+// And add this with your other route uses
 
 // Load environment variables
 dotenv.config({ path: path.resolve(__dirname, '.env') });
@@ -28,7 +32,7 @@ app.use(cookieParser());
 
 // Serve static files from the uploads directory
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
+app.use('/api/quotations',quotationRoutes);
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/billboards", billboardRoutes);
